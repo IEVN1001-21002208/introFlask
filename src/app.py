@@ -1,28 +1,22 @@
 from flask import Flask
 from flask_cors import CORS
 
-# Importamos la configuración y la instancia de la base de datos
 from config import config
 from database import mysql
 
-# Importamos las rutas (Blueprints) de los alumnos y maestros
-from blueprints.alumnos.routes import alumnos_bp
-from blueprints.maestros.routes import maestros_bp
+from blueprints import registrar_blueprints
 
 app = Flask(__name__)
 
-# 1. Cargar la configuración ANTES de la base de datos
+app.json.ensure_ascii = False
+
 app.config.from_object(config['development'])
 
-# 2. Inicializar CORS y la base de datos con la aplicación
 CORS(app)
 mysql.init_app(app)
 
-# 3. Registrar todos los Blueprints (Rutas modulares)
-app.register_blueprint(alumnos_bp)
-app.register_blueprint(maestros_bp)
+registrar_blueprints(app)
 
-# 4. Manejador de errores
 def pagina_no_encontrada(error):
     return "<h1>Página no encontrada</h1>", 404
 

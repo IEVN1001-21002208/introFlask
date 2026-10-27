@@ -1,7 +1,6 @@
 from flask import Blueprint, jsonify, request
 from database import mysql
 
-# Creamos el Blueprint. Todo lo que esté aquí comenzará con "/alumnos"
 alumnos_bp = Blueprint('alumnos', __name__, url_prefix='/alumnos')
 
 def leer_alumno_bd(matricula):
