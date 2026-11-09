@@ -1,0 +1,132 @@
+<div style="font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: auto;">
+  <h2>Pizzería</h2>
+  <hr style="margin: 15px 0;">
+
+  <div style="margin-bottom: 20px;">
+    <button (click)="cambiarVista('lista')" style="padding: 8px 15px; margin-right: 10px; cursor: pointer;">Ver Pedidos</button>
+    <button (click)="cambiarVista('formulario')" style="padding: 8px 15px; margin-right: 10px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer;">Nuevo Pedido</button>
+    <button (click)="cambiarVista('reportes')" style="padding: 8px 15px; background: #2980b9; color: white; border: none; border-radius: 4px; cursor: pointer;">Consultar Ventas</button>
+  </div>
+
+  <div *ngIf="vistaActual === 'lista'">
+    <h3>Historial de Pedidos</h3>
+    <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%;">
+      <thead>
+        <tr style="background: #f2f2f2; text-align: left;">
+          <th>ID</th>
+          <th>Cliente</th>
+          <th>Dirección</th>
+          <th>Teléfono</th>
+          <th>Fecha y Hora</th>
+          <th>Total</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let p of pedidos">
+          <td>{{ p.id }}</td>
+          <td>{{ p.nombre_cliente }}</td>
+          <td>{{ p.direccion }}</td>
+          <td>{{ p.telefono }}</td>
+          <td>{{ p.fecha_pedido | date:'dd/MM/yyyy, h:mm a' }}</td>
+          <td>${{ p.total_pedido }}</td>
+          <td style="text-align: center;">
+            <button (click)="eliminarPedido(p.id)" style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 3px; cursor: pointer;">Eliminar</button>
+          </td>
+        </tr>
+        <tr *ngIf="pedidos.length === 0">
+          <td colspan="7" style="text-align: center; color: #666; padding: 15px;">No hay pedidos registrados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div *ngIf="vistaActual === 'formulario'" style="background: #fafafa; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
+    <h3 style="color: #2980b9;">{{ editandoId ? 'Editando Pedido #' + editandoId : 'Datos del Cliente' }}</h3>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+      <input type="text" [(ngModel)]="cliente.nombre_cliente" placeholder="Nombre completo" style="padding: 8px; flex: 2;" required>
+      <input type="text" [(ngModel)]="cliente.direccion" placeholder="Dirección" style="padding: 8px; flex: 2;" required>
+      <input type="text" [(ngModel)]="cliente.telefono" placeholder="Teléfono" style="padding: 8px; flex: 1;" required>
+      <input type="datetime-local" [(ngModel)]="cliente.fecha_pedido" style="padding: 8px;">
+    </div>
+    <hr style="margin: 15px 0;">
+
+    <h3>Selección de Pizza</h3>
+    <div style="display: flex; gap: 20px; background: #fff; padding: 15px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;">
+      <div>
+        <strong>Tamaño Pizza:</strong><br>
+        <label><input type="radio" name="tamano" [(ngModel)]="pizzaActual.tamano" value="Chica" (change)="actualizarPrecioBase()"> Chica ($40)</label><br>
+        <label><input type="radio" name="tamano" [(ngModel)]="pizzaActual.tamano" value="Mediana" (change)="actualizarPrecioBase()"> Mediana ($80)</label><br>
+        <label><input type="radio" name="tamano" [(ngModel)]="pizzaActual.tamano" value="Grande" (change)="actualizarPrecioBase()"> Grande ($120)</label>
+      </div>
+      <div>
+        <strong>Ingredientes ($10 c/u):</strong><br>
+        <label><input type="checkbox" [(ngModel)]="pizzaActual.ingredientesSeleccionados.jamon"> Jamón</label><br>
+        <label><input type="checkbox" [(ngModel)]="pizzaActual.ingredientesSeleccionados.pina"> Piña</label><br>
+        <label><input type="checkbox" [(ngModel)]="pizzaActual.ingredientesSeleccionados.champinones"> Champiñones</label>
+      </div>
+      <div>
+        <strong>Num de Pizzas:</strong><br>
+        <input type="number" [(ngModel)]="pizzaActual.num_pizzas" min="1" style="padding: 6px; width: 80px; margin-bottom: 10px;"><br>
+        <button (click)="agregarPizzaAlDetalle()" style="padding: 8px 15px; background: #2980b9; color: white; border: none; border-radius: 4px; cursor: pointer;">Agregar</button>
+      </div>
+    </div>
+
+    <h3>Detalle del Pedido</h3>
+    <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; background: #fff; margin-bottom: 15px;">
+      <thead>
+        <tr style="background: #f2f2f2; text-align: left;">
+          <th>Tamaño</th><th>Ingredientes</th><th>Num Pizzas</th><th>SubTotal</th><th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of detallePedido; let i = index">
+          <td>{{ item.tamano }}</td>
+          <td>{{ item.ingredientes.join(', ') || 'Ninguno' }}</td>
+          <td>{{ item.num_pizzas }}</td>
+          <td>${{ item.subtotal }}</td>
+          <td><button (click)="quitarItemDetalle(i)" style="background: #e74c3c; color: white; border: none; padding: 3px 8px; border-radius: 3px; cursor: pointer;">Quitar</button></td>
+        </tr>
+      </tbody>
+    </table>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Total a Pagar: ${{ calcularTotalGeneral() }}</h3>
+      <button (click)="terminarPedido()" style="padding: 10px 20px; background: #27ae60; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        {{ editandoId ? 'Actualizar Pedido' : 'Terminar' }}
+      </button>
+    </div>
+  </div>
+
+  <div *ngIf="vistaActual === 'reportes'" style="background: #fafafa; padding: 20px; border: 1px solid #ccc; border-radius: 5px;">
+    <h3>Consulta de Ventas</h3>
+    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+      <div>
+        <label>Día </label>
+        <input type="text" [(ngModel)]="filtroDia" style="padding: 6px;">
+        <button (click)="buscarVentasDia()" style="padding: 6px 12px; margin-left: 5px; cursor: pointer;">Buscar por Día</button>
+      </div>
+      <div>
+        <label>Mes </label>
+        <input type="text" [(ngModel)]="filtroMes" style="padding: 6px;">
+        <button (click)="buscarVentasMes()" style="padding: 6px 12px; margin-left: 5px; cursor: pointer;">Buscar por Mes</button>
+      </div>
+    </div>
+
+    <h4>Resultados</h4>
+    <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse; width: 100%; background: #fff;">
+      <thead>
+        <tr style="background: #f2f2f2; text-align: left;">
+          <th>Cliente</th><th>Fecha</th><th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of resultadosReporte">
+          <td>{{ r.nombre_cliente }}</td>
+          <td>{{ r.fecha_pedido | date:'dd/MM/yyyy, h:mm a' }}</td>
+          <td>${{ r.total_pedido }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <h3 style="margin-top: 15px; color: #27ae60;">Ventas Totales del Periodo: ${{ totalReporte }}</h3>
+  </div>
+</div>
